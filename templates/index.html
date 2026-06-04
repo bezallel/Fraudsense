@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>FraudSense — AML Transaction Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="../static/css/fraudsense.css"/>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="intro-box">
+    <div class="intro-tag">Live Demo</div>
+    <div class="intro-heading" id="typed"></div>
+    <div class="intro-sub" id="isub"></div>
+    <div class="intro-steps" id="isteps">
+      <div class="istep"><div class="isn">01</div><div class="ist"><strong>Pick the transaction type.</strong> Some move money in ways fraud loves. The model knows which ones.</div></div>
+      <div class="istep"><div class="isn">02</div><div class="ist"><strong>Fill in the amounts.</strong> It is not just about how much was sent. It is about what was left behind.</div></div>
+      <div class="istep"><div class="isn">03</div><div class="ist"><strong>Run it.</strong> You get a fraud score, a fraud type, and a full draft report ready to review.</div></div>
+    </div>
+    <p class="intro-note" id="inote">Uses PaySim synthetic data. Real systems also screen against watchlists and customer history. The logic here reflects those same principles.</p>
+    <button class="ibtn" id="ibtn" onclick="closeIntro()">Show me</button>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <div class="topbar" id="topbar">
+    <div class="tb-l">
+      <div class="tb-mark"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><path d="M8 5.5V8.5l2 1.5"/></svg></div>
+      <div>
+        <div class="tb-name">FraudSense</div>
+        <div class="tb-sub">aml transaction intelligence</div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <span class="pill pill-live">live</span>
+      <span class="pill pill-auc">auc 0.998</span>
+    </div>
+  </div>
+
+  <div class="feed-strip" id="feed-strip">
+    <div class="feed-lbl">Transactions</div>
+    <div class="feed-track"><div class="feed-inner" id="feed-inner"></div></div>
+  </div>
+
+  <div class="main">
+    <div class="panel panel-l" id="panel-l">
+      <div class="plabel">Transaction input</div>
+      <div class="field" id="f-type">
+        <label>Transaction type</label>
+        <select id="txtype">
+          <option value="TRANSFER">TRANSFER</option>
+          <option value="CASH_OUT">CASH_OUT</option>
+          <option value="PAYMENT">PAYMENT</option>
+          <option value="DEBIT">DEBIT</option>
+        </select>
+        <div class="fhint">TRANSFER and CASH_OUT are the only types where fraud shows up in this dataset.</div>
+      </div>
+      <div class="field" id="f-amount">
+        <label>Amount</label>
+        <input type="number" id="amount" placeholder="e.g. 181000"/>
+      </div>
+      <div class="field" id="f-ob">
+        <label>Sender balance before</label>
+        <input type="number" id="ob" placeholder="e.g. 181000"/>
+        <div class="fhint">What the sender had before they sent anything.</div>
+      </div>
+      <div class="field" id="f-oa">
+        <label>Sender balance after</label>
+        <input type="number" id="oa" placeholder="e.g. 0"/>
+        <div class="fhint">If this drops to zero, the model pays close attention.</div>
+      </div>
+      <div class="field" id="f-db">
+        <label>Recipient balance before</label>
+        <input type="number" id="db" placeholder="e.g. 0"/>
+        <div class="fhint">Zero here is a red flag. It can mean a throwaway account set up just to receive stolen funds.</div>
+      </div>
+      <button class="rbtn" id="rbtn" onclick="runAnalysis()">Analyse transaction</button>
+      <div class="scbox">
+        <div class="sc-hd">Try a scenario</div>
+        <button class="sc sc-r" onclick="loadScenario('f1')">Full account drain via TRANSFER</button>
+        <button class="sc sc-r" onclick="loadScenario('f2')">CASH_OUT to a zero-balance account</button>
+        <button class="sc sc-g" onclick="loadScenario('l1')">Routine PAYMENT transaction</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-r">
+      <div class="plabel">Analysis output</div>
+      <div class="idle" id="idle">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M12 8v8"/></svg>
+        <div class="idle-t">Enter a transaction and run the model</div>
+      </div>
+      <div class="results" id="results">
+        <div class="verd" id="verd">
+          <div class="vl"><div class="vdot" id="vdot"></div><div><div class="vname" id="vname">—</div><div class="vsub" id="vsub">—</div></div></div>
+          <div class="vpct" id="vpct">—</div>
+        </div>
+        <div class="pcard" id="pcard">
+          <div class="prow"><span>Fraud probability</span><span id="ppct">—</span></div>
+          <div class="btrack"><div class="bfill" id="bfill" style="width:0%"></div></div>
+          <div class="sgrid" id="sgrid"></div>
+        </div>
+        <div class="tcard" id="tcard">
+          <div class="ttop">
+            <div><div class="tname" id="tname">—</div><div class="tfatf" id="tfatf">—</div></div>
+            <div class="tbadge" id="tbadge">—</div>
+          </div>
+          <div class="tdesc" id="tdesc">—</div>
+          <div class="tsigs" id="tsigs"></div>
+        </div>
+        <div class="rcard" id="rcard">
+          <div class="rhead">Why the model flagged this</div>
+          <div id="reasons"></div>
+        </div>
+        <button class="sarbtn" id="sarbtn" onclick="openSAR()">Generate SAR Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="statsbar">
+    <div class="fstat"><div class="fsn">0.998</div><div class="fsl">AUC-ROC</div></div>
+    <div class="fstat"><div class="fsn">XGBoost</div><div class="fsl">Algorithm</div></div>
+    <div class="fstat"><div class="fsn">SMOTE</div><div class="fsl">Imbalance handling</div></div>
+    <div class="fstat"><div class="fsn">PaySim</div><div class="fsl">Training data</div></div>
+  </div>
+
+  <div class="pfooter">&#169; All Rights Reserved 2026 &nbsp;|&nbsp; Designed by Peace Valari</div>
+</div>
+
+<!-- SAR MODAL -->
+<div id="sar-modal">
+  <div class="sarbox">
+    <div class="sarh">
+      <div><div class="sareyebrow">Suspicious Activity Report</div><div class="sartitle">SAR Draft</div></div>
+      <div class="sarx" onclick="closeSAR()">&#10005;</div>
+    </div>
+    <div class="sarmeta" id="sarmeta"></div>
+    <div class="sarsec"><div class="sarsl">Narrative</div><div class="sarnar" id="sarnar"></div></div>
+    <div class="sarsec"><div class="sarsl">Red flags identified</div><div class="sarflags" id="sarflags"></div></div>
+    <div class="sarfn">Model-generated draft for demonstration purposes.<br/>In production, reviewed and filed by a certified AML analyst under FATF Recommendation 20.</div>
+  </div>
+</div>
+
+<!-- COACH -->
+<div id="clayer">
+  <div class="cring" id="cring"></div>
+  <div class="ccard" id="ccard">
+    <div class="ctag" id="ctag"></div>
+    <div class="ctitle" id="ctitle"></div>
+    <div class="cbody" id="cbody"></div>
+    <div class="cfoot">
+      <div class="cdots" id="cdots"></div>
+      <div class="cnav">
+        <button class="cbtn csk" onclick="endTour()">Skip</button>
+        <button class="cbtn cnx" id="cnext" onclick="nextStep()">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+ <script src="../static/js/fraudsense.js"></script>
+</body>
+</html>

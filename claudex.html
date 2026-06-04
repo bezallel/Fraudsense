@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>FraudSense — AML Transaction Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg1:#0f0c29;
+  --bg2:#1a1a4e;
+  --bg3:#0d2137;
+  --surface:rgba(255,255,255,0.05);
+  --surface2:rgba(255,255,255,0.03);
+  --border:rgba(255,255,255,0.1);
+  --border2:rgba(255,255,255,0.06);
+  --accent:#5ee7c8;
+  --accent2:#7b6ff0;
+  --accent-dim:rgba(94,231,200,0.1);
+  --accent-border:rgba(94,231,200,0.25);
+  --red:#ff6b8a;
+  --red-dim:rgba(255,107,138,0.08);
+  --red-border:rgba(255,107,138,0.25);
+  --green:#5ee7c8;
+  --green-dim:rgba(94,231,200,0.08);
+  --green-border:rgba(94,231,200,0.25);
+  --amber:#ffcb6b;
+  --text:#e8f0ff;
+  --text-mid:rgba(232,240,255,0.55);
+  --text-dim:rgba(232,240,255,0.28);
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Plus Jakarta Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{font-family:var(--sans);color:var(--text);overflow-x:hidden;min-height:100vh}
+body{background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 45%,var(--bg3) 100%);background-attachment:fixed}
+
+canvas#bgc{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:1}
+#shell{position:relative;z-index:1;max-width:1080px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh}
+
+/* INTRO */
+#intro{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(10,8,35,0.92);
+  display:flex;align-items:center;justify-content:center;
+  padding:clamp(16px,4vw,40px);
+  transition:opacity 0.55s ease,transform 0.55s ease;
+}
+#intro.out{opacity:0;transform:scale(0.98);pointer-events:none}
+.intro-box{
+  max-width:480px;width:100%;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(94,231,200,0.15);
+  border-radius:20px;
+  padding:clamp(22px,4vw,38px);
+  text-align:center;
+}
+.intro-tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:0.18em;
+  color:var(--accent);text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.intro-tag::before,.intro-tag::after{content:'';flex:1;max-width:32px;height:0.5px;background:rgba(94,231,200,0.3)}
+.intro-heading{
+  font-size:clamp(20px,3.5vw,26px);font-weight:800;
+  color:#fff;line-height:1.3;margin-bottom:6px;
+  letter-spacing:-0.025em;min-height:clamp(52px,6vw,68px);
+}
+.cursor{display:inline-block;width:2px;height:0.85em;background:var(--accent);vertical-align:middle;margin-left:2px;animation:bl 0.85s step-end infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.intro-sub{font-size:clamp(11px,1.5vw,13px);color:var(--text-mid);margin-bottom:clamp(16px,3vw,22px);line-height:1.65;opacity:0;transition:opacity 0.5s}
+.intro-sub.show{opacity:1}
+.intro-steps{display:flex;flex-direction:column;gap:8px;margin-bottom:clamp(14px,2.5vw,20px);text-align:left;opacity:0;transform:translateY(5px);transition:opacity 0.45s,transform 0.45s}
+.intro-steps.show{opacity:1;transform:translateY(0)}
+.istep{display:flex;gap:11px;padding:10px 12px;background:rgba(94,231,200,0.06);border:0.5px solid rgba(94,231,200,0.15);border-radius:10px}
+.isn{font-family:var(--mono);font-size:9px;color:var(--accent);min-width:16px;padding-top:2px;font-weight:500}
+.ist{font-size:clamp(11px,1.4vw,12.5px);color:var(--text-mid);line-height:1.6}
+.ist strong{color:var(--text);font-weight:700}
+.intro-note{font-family:var(--mono);font-size:9px;color:var(--text-dim);line-height:1.75;margin-bottom:clamp(14px,2.5vw,20px);opacity:0;transition:opacity 0.5s 0.1s}
+.intro-note.show{opacity:1}
+.ibtn{width:100%;padding:11px;background:var(--accent2);border:none;border-radius:10px;color:#fff;font-family:var(--sans);font-size:clamp(12px,1.5vw,13px);font-weight:700;cursor:pointer;letter-spacing:0.03em;opacity:0;pointer-events:none;transition:opacity 0.5s,background 0.2s,transform 0.1s}
+.ibtn.show{opacity:1;pointer-events:all}
+.ibtn:hover{background:#6a5ee0}
+.ibtn:active{transform:scale(0.98)}
+
+/* NAV */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:clamp(10px,1.8vh,14px) clamp(14px,2.5vw,26px);
+  border-bottom:0.5px solid var(--border);
+  background:rgba(10,8,35,0.5);
+  position:sticky;top:0;z-index:50;
+}
+.tb-l{display:flex;align-items:center;gap:9px}
+.tb-mark{width:26px;height:26px;background:rgba(94,231,200,0.12);border:0.5px solid rgba(94,231,200,0.3);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tb-mark svg{width:12px;height:12px;stroke:var(--accent);stroke-width:2;fill:none}
+.tb-name{font-size:clamp(13px,2vw,15px);font-weight:800;color:#fff;letter-spacing:-0.02em}
+.tb-sub{font-family:var(--mono);font-size:clamp(7px,1vw,9px);color:var(--text-dim);margin-top:1px}
+.tb-r{display:flex;gap:6px}
+.pill{font-family:var(--mono);font-size:clamp(7px,1vw,9px);padding:3px 9px;border-radius:20px}
+.pill-live{background:rgba(94,231,200,0.1);color:var(--accent);border:0.5px solid rgba(94,231,200,0.25);display:flex;align-items:center;gap:4px}
+.pill-live::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--accent);display:inline-block;animation:pp 2s ease-in-out infinite}
+@keyframes pp{0%,100%{opacity:1}50%{opacity:0.2}}
+.pill-auc{background:rgba(123,111,240,0.12);color:#a89ef5;border:0.5px solid rgba(123,111,240,0.25)}
+
+/* FEED */
+.feed-strip{
+  overflow:hidden;height:clamp(34px,4.5vh,42px);
+  display:flex;align-items:center;
+  border-bottom:0.5px solid var(--border);
+  background:rgba(10,8,35,0.3);position:relative;
+}
+.feed-strip::before,.feed-strip::after{content:'';position:absolute;top:0;bottom:0;width:48px;z-index:2;pointer-events:none}
+.feed-strip::before{left:0;background:linear-gradient(to right,rgba(15,12,41,0.9),transparent)}
+.feed-strip::after{right:0;background:linear-gradient(to left,rgba(15,12,41,0.9),transparent)}
+.feed-lbl{font-family:var(--mono);font-size:clamp(7px,1vw,8.5px);color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;padding:0 clamp(10px,1.5vw,16px);flex-shrink:0;position:relative;z-index:3}
+.feed-track{flex:1;overflow:hidden;display:flex;align-items:center;height:100%}
+.feed-inner{display:flex;animation:ticker 30s linear infinite;white-space:nowrap}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.fi{display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-right:0.5px solid var(--border2);height:clamp(34px,4.5vh,42px);flex-shrink:0}
+.fd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.fd.fraud{background:var(--red);box-shadow:0 0 6px var(--red)}
+.fd.clean{background:var(--green)}
+.fd.alert{background:var(--red);animation:ap 0.7s ease-in-out infinite}
+@keyframes ap{0%,100%{transform:scale(1)}50%{transform:scale(1.9);opacity:0.4}}
+.ft{font-family:var(--mono);font-size:clamp(7px,1vw,9px);color:var(--text-dim)}
+.fa{font-family:var(--mono);font-size:clamp(8px,1vw,9.5px);font-weight:500}
+.fa.fraud{color:var(--red)}.fa.clean{color:var(--text-mid)}
+.fs{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);padding:1px 6px;border-radius:4px}
+.fs.fraud{background:rgba(255,107,138,0.1);color:var(--red);border:0.5px solid rgba(255,107,138,0.2)}
+.fs.clean{background:rgba(94,231,200,0.08);color:var(--green);border:0.5px solid rgba(94,231,200,0.18)}
+
+/* MAIN GRID */
+.main{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0}
+.panel{padding:clamp(14px,2vh,22px) clamp(14px,2.2vw,26px);overflow-y:auto;scrollbar-width:none}
+.panel::-webkit-scrollbar{display:none}
+.panel-l{border-right:0.5px solid var(--border)}
+.plabel{font-family:var(--mono);font-size:clamp(7px,1vw,8.5px);letter-spacing:0.12em;color:var(--text-dim);text-transform:uppercase;margin-bottom:clamp(10px,1.8vh,16px)}
+
+/* FORM */
+.field{margin-bottom:clamp(8px,1.3vh,12px)}
+.field label{display:block;font-size:clamp(10.5px,1.4vw,12px);color:var(--text-mid);margin-bottom:4px;font-weight:600}
+.fhint{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);color:var(--text-dim);margin-top:3px;line-height:1.55}
+.field select,.field input{
+  width:100%;padding:clamp(7px,1.1vh,9px) 11px;
+  background:rgba(255,255,255,0.06);
+  border:0.5px solid var(--border);border-radius:8px;
+  font-size:clamp(11px,1.4vw,13px);color:var(--text);
+  outline:none;transition:border-color 0.2s,background 0.2s;
+  -webkit-appearance:none;font-family:var(--sans);
+}
+.field select:focus,.field input:focus{border-color:rgba(94,231,200,0.5);background:rgba(94,231,200,0.05)}
+.field select option{background:#1a1a4e}
+.field input::-webkit-inner-spin-button{-webkit-appearance:none}
+.rbtn{
+  width:100%;margin-top:clamp(8px,1.2vh,12px);padding:clamp(9px,1.3vh,11px);
+  background:var(--accent2);color:#fff;border:none;border-radius:8px;
+  font-family:var(--sans);font-size:clamp(11px,1.4vw,13px);font-weight:700;
+  cursor:pointer;letter-spacing:0.02em;transition:background 0.2s,transform 0.1s;
+}
+.rbtn:hover{background:#6a5ee0}
+.rbtn:active{transform:scale(0.98)}
+.rbtn.busy{background:#3d3580;pointer-events:none}
+.scbox{margin-top:clamp(10px,1.5vh,14px);padding:clamp(9px,1.3vh,12px) clamp(10px,1.5vw,14px);background:var(--surface);border:0.5px solid var(--border);border-radius:10px}
+.sc-hd{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.sc{display:block;width:100%;text-align:left;padding:clamp(6px,0.9vh,8px) 10px;border-radius:7px;font-size:clamp(10px,1.3vw,12px);color:var(--text-mid);cursor:pointer;font-family:var(--sans);font-weight:500;transition:background 0.15s,color 0.15s;margin-bottom:5px;border:0.5px solid;background:transparent}
+.sc:last-child{margin:0}
+.sc-r{border-color:var(--red-border)}
+.sc-r:hover{background:var(--red-dim);color:var(--text)}
+.sc-g{border-color:var(--green-border)}
+.sc-g:hover{background:var(--green-dim);color:var(--text)}
+
+/* OUTPUT */
+.idle{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:260px;gap:7px}
+.idle svg{width:clamp(22px,2.5vw,28px);height:clamp(22px,2.5vw,28px);stroke:rgba(255,255,255,0.1);stroke-width:1.5;fill:none;margin-bottom:4px}
+.idle-t{font-size:clamp(10px,1.3vw,12px);color:var(--text-dim);text-align:center;line-height:1.65;max-width:145px}
+.results{display:none;flex-direction:column;gap:clamp(8px,1.2vh,11px)}
+
+.verd{display:flex;align-items:center;justify-content:space-between;padding:clamp(10px,1.5vh,14px) clamp(11px,1.5vw,16px);border-radius:10px;border:0.5px solid}
+.verd.bad{background:var(--red-dim);border-color:var(--red-border)}
+.verd.ok{background:var(--green-dim);border-color:var(--green-border)}
+.vl{display:flex;align-items:center;gap:8px}
+.vdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.vdot.bad{background:var(--red)}
+.vdot.ok{background:var(--green)}
+.vname{font-size:clamp(12px,1.6vw,14px);font-weight:700;color:#fff}
+.vsub{font-family:var(--mono);font-size:clamp(7px,0.9vw,9px);color:var(--text-dim);margin-top:2px}
+.vpct{font-size:clamp(20px,2.8vw,26px);font-weight:800;letter-spacing:-0.03em}
+.vpct.bad{color:var(--red)}.vpct.ok{color:var(--green)}
+
+.pcard{padding:clamp(10px,1.5vh,14px) clamp(11px,1.5vw,16px);background:var(--surface);border:0.5px solid var(--border);border-radius:10px}
+.prow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:clamp(7px,0.9vw,9px);color:var(--text-dim);margin-bottom:7px}
+.btrack{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;margin-bottom:9px}
+.bfill{height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sig{background:var(--surface2);border:0.5px solid var(--border2);border-radius:7px;padding:clamp(6px,1vh,9px) 10px}
+.sigl{font-family:var(--mono);font-size:clamp(6px,0.85vw,8px);color:var(--text-dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.06em}
+.sigv{font-size:clamp(10px,1.3vw,12px);font-weight:700}
+.sigv.r{color:var(--red)}.sigv.g{color:var(--green)}.sigv.a{color:var(--amber)}
+
+.tcard{padding:clamp(10px,1.5vh,13px) clamp(11px,1.5vw,15px);border-radius:10px;border:0.5px solid;display:none;flex-direction:column;gap:7px}
+.tcard.show{display:flex}
+.tcard.ato{background:rgba(255,107,138,0.06);border-color:var(--red-border)}
+.tcard.lay{background:rgba(255,203,107,0.05);border-color:rgba(255,203,107,0.2)}
+.tcard.co{background:rgba(123,111,240,0.06);border-color:rgba(123,111,240,0.2)}
+.tcard.ok2{background:var(--green-dim);border-color:var(--green-border)}
+.ttop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tname{font-size:clamp(12px,1.6vw,14px);font-weight:700;color:#fff}
+.tfatf{font-family:var(--mono);font-size:clamp(7px,0.85vw,8.5px);color:var(--text-dim);margin-top:2px}
+.tbadge{font-family:var(--mono);font-size:clamp(7px,0.85vw,8.5px);padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.tbadge.ato{background:rgba(255,107,138,0.12);color:var(--red);border:0.5px solid var(--red-border)}
+.tbadge.lay{background:rgba(255,203,107,0.1);color:var(--amber);border:0.5px solid rgba(255,203,107,0.22)}
+.tbadge.co{background:rgba(123,111,240,0.1);color:#a89ef5;border:0.5px solid rgba(123,111,240,0.22)}
+.tdesc{font-size:clamp(10px,1.25vw,11.5px);color:var(--text-mid);line-height:1.65}
+.tsigs{display:flex;flex-wrap:wrap;gap:5px}
+.tsig{font-family:var(--mono);font-size:clamp(6px,0.85vw,8.5px);padding:2px 7px;border-radius:5px;background:rgba(255,255,255,0.04);border:0.5px solid var(--border);color:var(--text-dim)}
+
+.rcard{padding:clamp(10px,1.5vh,13px) clamp(11px,1.5vw,15px);background:var(--surface);border:0.5px solid var(--border);border-radius:10px}
+.rhead{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.ri{display:flex;gap:7px;align-items:flex-start;padding:4px 0;border-bottom:0.5px solid var(--border2)}
+.ri:last-child{border:none}
+.rdot{width:4px;height:4px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.rdot.r{background:var(--red)}.rdot.g{background:var(--green)}.rdot.a{background:var(--amber)}.rdot.n{background:rgba(255,255,255,0.15)}
+.rtxt{font-size:clamp(10px,1.25vw,11.5px);color:var(--text-mid);line-height:1.6}
+
+.sarbtn{width:100%;padding:clamp(8px,1.1vh,10px);border:0.5px solid rgba(94,231,200,0.3);background:rgba(94,231,200,0.08);border-radius:8px;color:var(--accent);font-family:var(--sans);font-size:clamp(10px,1.3vw,12px);font-weight:700;cursor:pointer;letter-spacing:0.02em;transition:background 0.2s,color 0.2s;display:none}
+.sarbtn.show{display:block}
+.sarbtn:hover{background:var(--accent);color:#0f0c29}
+
+/* STATS */
+.statsbar{
+  display:flex;border-top:0.5px solid var(--border);
+  background:rgba(10,8,35,0.4);
+  flex-shrink:0;
+}
+.fstat{flex:1;padding:clamp(8px,1.2vh,12px) 8px;text-align:center;border-right:0.5px solid var(--border)}
+.fstat:last-child{border:none}
+.fsn{font-family:var(--mono);font-size:clamp(9px,1.3vw,12px);font-weight:500;color:#a89ef5}
+.fsl{font-size:clamp(7px,0.9vw,9px);color:var(--text-dim);margin-top:1px;white-space:nowrap}
+
+/* FOOTER */
+.pfooter{text-align:center;padding:clamp(6px,0.9vh,10px) 16px;border-top:0.5px solid var(--border);font-family:var(--mono);font-size:clamp(7px,0.85vw,9px);color:var(--text-dim);letter-spacing:0.05em;background:rgba(10,8,35,0.3);flex-shrink:0}
+
+/* SAR MODAL */
+#sar-modal{position:fixed;inset:0;z-index:600;background:rgba(10,8,35,0.88);display:none;align-items:center;justify-content:center;padding:clamp(12px,3vw,24px)}
+#sar-modal.show{display:flex}
+.sarbox{background:#0e0b2e;border:0.5px solid var(--border);border-radius:16px;width:100%;max-width:520px;max-height:88dvh;overflow-y:auto;padding:clamp(18px,3vw,28px);scrollbar-width:none}
+.sarbox::-webkit-scrollbar{display:none}
+.sarh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:clamp(12px,2vh,18px)}
+.sareyebrow{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:3px}
+.sartitle{font-size:clamp(16px,2.2vw,20px);font-weight:800;color:#fff;letter-spacing:-0.02em}
+.sarx{background:var(--surface);border:0.5px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-dim);font-size:14px;flex-shrink:0;transition:background 0.15s}
+.sarx:hover{background:rgba(255,255,255,0.1)}
+.sarmeta{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:clamp(12px,2vh,16px)}
+.sarmi{padding:8px 11px;background:var(--surface);border:0.5px solid var(--border);border-radius:8px}
+.sarml{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);color:var(--text-dim);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:2px}
+.sarmv{font-size:clamp(11px,1.4vw,13px);color:var(--text);font-weight:700}
+.sarsec{margin-bottom:clamp(10px,1.8vh,16px)}
+.sarsl{font-family:var(--mono);font-size:clamp(7px,0.9vw,8.5px);color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:7px;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.sarnar{font-size:clamp(11px,1.3vw,12.5px);color:var(--text-mid);line-height:1.75;background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:12px}
+.sarflags{display:flex;flex-direction:column;gap:6px}
+.sarflag{display:flex;align-items:flex-start;gap:8px;font-size:clamp(11px,1.3vw,12.5px);color:var(--text-mid);line-height:1.55}
+.sarflag::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:5px}
+.sarfn{font-family:var(--mono);font-size:clamp(7px,0.9vw,9px);color:var(--text-dim);text-align:center;margin-top:clamp(12px,2vh,18px);line-height:1.7;padding-top:clamp(10px,1.5vh,14px);border-top:0.5px solid var(--border)}
+
+/* COACH */
+#clayer{position:fixed;inset:0;z-index:400;pointer-events:none}
+.cring{position:fixed;border-radius:10px;border:1.5px solid rgba(94,231,200,0.55);pointer-events:none;z-index:399;opacity:0;transition:all 0.3s ease;box-shadow:0 0 18px rgba(94,231,200,0.1)}
+.cring.on{opacity:1}
+.ccard{
+  position:fixed;width:min(218px,56vw);
+  background:#0e0b2e;
+  border:0.5px solid rgba(94,231,200,0.25);
+  border-radius:12px;padding:13px 14px;
+  pointer-events:all;
+  opacity:0;transform:translateY(4px);
+  transition:opacity 0.3s ease,transform 0.3s ease;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6);z-index:401;
+}
+.ccard.on{opacity:1;transform:translateY(0)}
+.ctag{font-family:var(--mono);font-size:8px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px}
+.ctitle{font-size:clamp(11px,1.4vw,13px);font-weight:700;color:#fff;margin-bottom:4px;line-height:1.3}
+.cbody{font-size:clamp(10px,1.2vw,11.5px);color:var(--text-mid);line-height:1.6;margin-bottom:10px}
+.cfoot{display:flex;align-items:center;justify-content:space-between}
+.cdots{display:flex;gap:4px}
+.cdot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.12)}
+.cdot.on{background:var(--accent)}
+.cnav{display:flex;gap:5px}
+.cbtn{font-size:10px;padding:5px 10px;border-radius:6px;cursor:pointer;font-family:var(--sans);font-weight:700;border:none}
+.cnx{background:var(--accent2);color:#fff;transition:background 0.15s}
+.cnx:hover{background:#6a5ee0}
+.csk{background:transparent;color:var(--text-dim);border:0.5px solid var(--border)}
+.csk:hover{color:var(--text-mid)}
+
+.ldots{display:inline-flex;gap:3px;align-items:center;margin-left:6px}
+.ld{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.7);animation:ld 1.2s infinite ease-in-out}
+.ld:nth-child(2){animation-delay:.2s}.ld:nth-child(3){animation-delay:.4s}
+@keyframes ld{0%,80%,100%{transform:scale(0.5);opacity:0.3}40%{transform:scale(1);opacity:1}}
+
+/* RESPONSIVE */
+@media(max-width:660px){
+  body{overflow-y:auto}
+  .main{grid-template-columns:1fr}
+  .panel-l{border-right:none;border-bottom:0.5px solid var(--border)}
+  .statsbar{display:grid;grid-template-columns:1fr 1fr}
+  .statsbar .fstat:nth-child(2){border-right:none}
+  .statsbar .fstat:nth-child(3){border-top:0.5px solid var(--border)}
+  .statsbar .fstat:nth-child(4){border-top:0.5px solid var(--border);border-right:none}
+}
+@media(max-width:340px){
+  .feed-strip,.pfooter{display:none}
+  .statsbar{grid-template-columns:1fr 1fr}
+}
+@media(orientation:landscape)and(max-height:500px){
+  .feed-strip{height:28px}
+  .main{overflow:hidden}
+  .panel{overflow-y:auto}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="intro-box">
+    <div class="intro-tag">AML Portfolio Demo</div>
+    <div class="intro-heading" id="typed"></div>
+    <div class="intro-sub" id="isub">Built to show how machine learning catches financial fraud before it disappears. Run a transaction through it and see exactly what the model finds.</div>
+    <div class="intro-steps" id="isteps">
+      <div class="istep"><div class="isn">01</div><div class="ist"><strong>Pick the transaction type.</strong> Some move money in ways fraud loves. The model knows which ones.</div></div>
+      <div class="istep"><div class="isn">02</div><div class="ist"><strong>Fill in the amounts.</strong> It is not just about how much was sent. It is about what was left behind.</div></div>
+      <div class="istep"><div class="isn">03</div><div class="ist"><strong>Run it.</strong> You get a fraud score, a fraud type, and a full draft report ready to review.</div></div>
+    </div>
+    <p class="intro-note" id="inote">Uses PaySim synthetic data. Real systems also screen against watchlists and customer history. The logic here reflects those same principles.</p>
+    <button class="ibtn" id="ibtn" onclick="closeIntro()">Show me</button>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <div class="topbar" id="topbar">
+    <div class="tb-l">
+      <div class="tb-mark"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5"/><path d="M8 5.5V8.5l2 1.5"/></svg></div>
+      <div>
+        <div class="tb-name">FraudSense</div>
+        <div class="tb-sub">aml transaction intelligence</div>
+      </div>
+    </div>
+    <div class="tb-r">
+      <span class="pill pill-live">live</span>
+      <span class="pill pill-auc">auc 0.998</span>
+    </div>
+  </div>
+
+  <div class="feed-strip" id="feed-strip">
+    <div class="feed-lbl">Transactions</div>
+    <div class="feed-track"><div class="feed-inner" id="feed-inner"></div></div>
+  </div>
+
+  <div class="main">
+    <div class="panel panel-l" id="panel-l">
+      <div class="plabel">Transaction input</div>
+      <div class="field" id="f-type">
+        <label>Transaction type</label>
+        <select id="txtype">
+          <option value="TRANSFER">TRANSFER</option>
+          <option value="CASH_OUT">CASH_OUT</option>
+          <option value="PAYMENT">PAYMENT</option>
+          <option value="DEBIT">DEBIT</option>
+        </select>
+        <div class="fhint">TRANSFER and CASH_OUT are the only types where fraud shows up in this dataset.</div>
+      </div>
+      <div class="field" id="f-amount">
+        <label>Amount</label>
+        <input type="number" id="amount" placeholder="e.g. 181000"/>
+      </div>
+      <div class="field" id="f-ob">
+        <label>Sender balance before</label>
+        <input type="number" id="ob" placeholder="e.g. 181000"/>
+        <div class="fhint">What the sender had before they sent anything.</div>
+      </div>
+      <div class="field" id="f-oa">
+        <label>Sender balance after</label>
+        <input type="number" id="oa" placeholder="e.g. 0"/>
+        <div class="fhint">If this drops to zero, the model pays close attention.</div>
+      </div>
+      <div class="field" id="f-db">
+        <label>Recipient balance before</label>
+        <input type="number" id="db" placeholder="e.g. 0"/>
+        <div class="fhint">Zero here is a red flag. It can mean a throwaway account set up just to receive stolen funds.</div>
+      </div>
+      <button class="rbtn" id="rbtn" onclick="runAnalysis()">Analyse transaction</button>
+      <div class="scbox">
+        <div class="sc-hd">Try a scenario</div>
+        <button class="sc sc-r" onclick="loadScenario('f1')">Full account drain via TRANSFER</button>
+        <button class="sc sc-r" onclick="loadScenario('f2')">CASH_OUT to a zero-balance account</button>
+        <button class="sc sc-g" onclick="loadScenario('l1')">Routine PAYMENT transaction</button>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-r">
+      <div class="plabel">Analysis output</div>
+      <div class="idle" id="idle">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M12 8v8"/></svg>
+        <div class="idle-t">Enter a transaction and run the model</div>
+      </div>
+      <div class="results" id="results">
+        <div class="verd" id="verd">
+          <div class="vl"><div class="vdot" id="vdot"></div><div><div class="vname" id="vname">—</div><div class="vsub" id="vsub">—</div></div></div>
+          <div class="vpct" id="vpct">—</div>
+        </div>
+        <div class="pcard" id="pcard">
+          <div class="prow"><span>Fraud probability</span><span id="ppct">—</span></div>
+          <div class="btrack"><div class="bfill" id="bfill" style="width:0%"></div></div>
+          <div class="sgrid" id="sgrid"></div>
+        </div>
+        <div class="tcard" id="tcard">
+          <div class="ttop">
+            <div><div class="tname" id="tname">—</div><div class="tfatf" id="tfatf">—</div></div>
+            <div class="tbadge" id="tbadge">—</div>
+          </div>
+          <div class="tdesc" id="tdesc">—</div>
+          <div class="tsigs" id="tsigs"></div>
+        </div>
+        <div class="rcard" id="rcard">
+          <div class="rhead">Why the model flagged this</div>
+          <div id="reasons"></div>
+        </div>
+        <button class="sarbtn" id="sarbtn" onclick="openSAR()">Generate SAR Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="statsbar">
+    <div class="fstat"><div class="fsn">0.998</div><div class="fsl">AUC-ROC</div></div>
+    <div class="fstat"><div class="fsn">XGBoost</div><div class="fsl">Algorithm</div></div>
+    <div class="fstat"><div class="fsn">SMOTE</div><div class="fsl">Imbalance handling</div></div>
+    <div class="fstat"><div class="fsn">PaySim</div><div class="fsl">Training data</div></div>
+  </div>
+
+  <div class="pfooter">&#169; All Rights Reserved 2026 &nbsp;|&nbsp; Designed by Peace Valari</div>
+</div>
+
+<!-- SAR MODAL -->
+<div id="sar-modal">
+  <div class="sarbox">
+    <div class="sarh">
+      <div><div class="sareyebrow">Suspicious Activity Report</div><div class="sartitle">SAR Draft</div></div>
+      <div class="sarx" onclick="closeSAR()">&#10005;</div>
+    </div>
+    <div class="sarmeta" id="sarmeta"></div>
+    <div class="sarsec"><div class="sarsl">Narrative</div><div class="sarnar" id="sarnar"></div></div>
+    <div class="sarsec"><div class="sarsl">Red flags identified</div><div class="sarflags" id="sarflags"></div></div>
+    <div class="sarfn">Model-generated draft for demonstration purposes.<br/>In production, reviewed and filed by a certified AML analyst under FATF Recommendation 20.</div>
+  </div>
+</div>
+
+<!-- COACH -->
+<div id="clayer">
+  <div class="cring" id="cring"></div>
+  <div class="ccard" id="ccard">
+    <div class="ctag" id="ctag"></div>
+    <div class="ctitle" id="ctitle"></div>
+    <div class="cbody" id="cbody"></div>
+    <div class="cfoot">
+      <div class="cdots" id="cdots"></div>
+      <div class="cnav">
+        <button class="cbtn csk" onclick="endTour()">Skip</button>
+        <button class="cbtn cnx" id="cnext" onclick="nextStep()">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* BG CANVAS with colorful gradient orbs */
+(function(){
+  const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');
+  let W,H;
+  const orbs=[
+    {x:0.15,y:0.2,r:0.28,c:'rgba(94,231,200,0.07)',vx:0.0003,vy:0.0002},
+    {x:0.8,y:0.15,r:0.32,c:'rgba(123,111,240,0.09)',vx:-0.0002,vy:0.0003},
+    {x:0.5,y:0.75,r:0.35,c:'rgba(255,107,138,0.06)',vx:0.0002,vy:-0.0002},
+    {x:0.9,y:0.8,r:0.22,c:'rgba(94,231,200,0.05)',vx:-0.0003,vy:-0.0002},
+    {x:0.1,y:0.85,r:0.2,c:'rgba(255,203,107,0.05)',vx:0.0002,vy:0.0003},
+  ];
+  const pts=Array.from({length:36},()=>({x:Math.random(),y:Math.random(),vx:(Math.random()-0.5)*0.0003,vy:(Math.random()-0.5)*0.0003}));
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    orbs.forEach(o=>{
+      o.x+=o.vx;o.y+=o.vy;
+      if(o.x<0||o.x>1)o.vx*=-1;
+      if(o.y<0||o.y>1)o.vy*=-1;
+      const g=ctx.createRadialGradient(o.x*W,o.y*H,0,o.x*W,o.y*H,o.r*Math.max(W,H));
+      g.addColorStop(0,o.c);g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    });
+    pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>1)p.vx*=-1;if(p.y<0||p.y>1)p.vy*=-1;});
+    ctx.fillStyle='rgba(94,231,200,0.5)';
+    pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x*W,p.y*H,1.2,0,Math.PI*2);ctx.fill();});
+    ctx.lineWidth=0.5;
+    for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+      const dx=(pts[i].x-pts[j].x)*W,dy=(pts[i].y-pts[j].y)*H,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<90){ctx.globalAlpha=(1-d/90)*0.2;ctx.strokeStyle='rgba(94,231,200,1)';ctx.beginPath();ctx.moveTo(pts[i].x*W,pts[i].y*H);ctx.lineTo(pts[j].x*W,pts[j].y*H);ctx.stroke();ctx.globalAlpha=1;}
+    }
+    requestAnimationFrame(draw);
+  }
+  resize();draw();
+  window.addEventListener('resize',resize);
+})();
+
+/* FEED */
+const FEED=[
+  {t:'TRANSFER',a:'$181,000',s:'0.97',f:true},
+  {t:'PAYMENT',a:'$9,840',s:'0.02',f:false},
+  {t:'CASH_OUT',a:'$92,000',s:'0.94',f:true},
+  {t:'PAYMENT',a:'$1,864',s:'0.01',f:false},
+  {t:'TRANSFER',a:'$450,000',s:'0.99',f:true,al:true},
+  {t:'DEBIT',a:'$340',s:'0.00',f:false},
+  {t:'CASH_OUT',a:'$67,200',s:'0.88',f:true},
+  {t:'PAYMENT',a:'$5,200',s:'0.03',f:false},
+  {t:'TRANSFER',a:'$23,100',s:'0.91',f:true},
+  {t:'PAYMENT',a:'$780',s:'0.01',f:false},
+  {t:'CASH_OUT',a:'$130,000',s:'0.96',f:true,al:true},
+  {t:'DEBIT',a:'$2,100',s:'0.00',f:false},
+];
+(function(){
+  const rows=[...FEED,...FEED];
+  document.getElementById('feed-inner').innerHTML=rows.map(d=>`<div class="fi"><div class="fd ${d.al?'alert':d.f?'fraud':'clean'}"></div><span class="ft">${d.t}</span><span class="fa ${d.f?'fraud':'clean'}">${d.a}</span><span class="fs ${d.f?'fraud':'clean'}">${d.s}</span></div>`).join('');
+})();
+
+/* INTRO */
+const HEADING="Financial crime moves fast.\nThis model moves faster.";
+function typeIt(el,text,cb){
+  let i=0;
+  function tick(){el.innerHTML=text.slice(0,i).replace(/\n/g,'<br>')+'<span class="cursor"></span>';if(i<text.length){i++;setTimeout(tick,30+Math.random()*14);}else if(cb)setTimeout(cb,200);}
+  tick();
+}
+setTimeout(()=>{
+  typeIt(document.getElementById('typed'),HEADING,()=>{
+    document.getElementById('isub').classList.add('show');
+    document.getElementById('isteps').classList.add('show');
+    setTimeout(()=>{document.getElementById('inote').classList.add('show');setTimeout(()=>document.getElementById('ibtn').classList.add('show'),250);},400);
+  });
+},280);
+function closeIntro(){
+  const el=document.getElementById('intro');el.classList.add('out');
+  setTimeout(()=>{el.style.display='none';setTimeout(startPreTour,360);},530);
+}
+
+/* SCENARIOS */
+function loadScenario(id){
+  const s={f1:{t:'TRANSFER',a:181000,ob:181000,oa:0,db:0},f2:{t:'CASH_OUT',a:92000,ob:92000,oa:0,db:0},l1:{t:'PAYMENT',a:9840,ob:170136,oa:160296,db:2500}}[id];
+  if(!s)return;
+  document.getElementById('txtype').value=s.t;
+  document.getElementById('amount').value=s.a;
+  document.getElementById('ob').value=s.ob;
+  document.getElementById('oa').value=s.oa;
+  document.getElementById('db').value=s.db;
+}
+function resetInputs(){
+  document.getElementById('txtype').value='TRANSFER';
+  ['amount','ob','oa','db'].forEach(id=>document.getElementById(id).value='');
+}
+
+/* TYPOLOGY */
+function getTypo(type,drain,db,fraud){
+  if(!fraud)return null;
+  if(type==='TRANSFER'&&drain>90&&db===0)return{
+    k:'ato',
+    name:'Account Takeover',
+    fatf:'FATF Financial Crime Typology',
+    desc:"Someone gained access to this account without the owner knowing and immediately moved all the money out. This is called an Account Takeover (ATO): a fraudster gets in, empties the account in one move, and disappears before the real owner notices anything is wrong.",
+    sigs:[
+      'Full account drain (everything sent at once)',
+      'Recipient had no prior balance (likely a throwaway account)',
+      'Single exit transaction (in and out, no back and forth)',
+    ],
+    badge:'Account Takeover'
+  };
+  if(type==='CASH_OUT'&&drain>70)return{
+    k:'co',
+    name:'Illicit Cash Conversion',
+    fatf:'FATF Financial Crime Typology',
+    desc:"A large portion of this account is being converted to cash quickly. This is a common first step in money laundering called Placement, where illegally obtained money is introduced into the financial system and immediately pulled out as cash to make it harder to trace.",
+    sigs:[
+      'High drain ratio (most of the balance sent)',
+      'CASH_OUT used as exit method',
+      'Rapid cash extraction pattern',
+    ],
+    badge:'Illicit Cash-Out'
+  };
+  if(type==='TRANSFER'&&db===0)return{
+    k:'lay',
+    name:'Layering via Mule Account',
+    fatf:'FATF Financial Crime Typology',
+    desc:"The recipient account had no money in it before this transfer arrived. This is a strong sign of a mule account, which is a bank account opened or taken over by criminals specifically to receive stolen funds and pass them on quickly. The goal is to put distance between the money and its original source, a process known as Layering.",
+    sigs:[
+      'Recipient balance was zero (no legitimate account history)',
+      'Mule account pattern (account exists only to receive and move funds)',
+      'Layering stage (money being shuffled to hide its origin)',
+    ],
+    badge:'Layering'
+  };
+  return{
+    k:'ato',
+    name:'Suspicious Movement',
+    fatf:'FATF General Fraud Indicators',
+    desc:"This transaction matches several patterns the model associates with fraud. The balance movement is unusual and the transaction type is one the model has learned to watch closely.",
+    sigs:[
+      'High fraud probability score',
+      'Unusual balance movement detected',
+    ],
+    badge:'Suspicious'
+  };
+}
+
+let lastState={};
+
+/* ANALYSIS */
+async function runAnalysis(){
+  const btn=document.getElementById('rbtn');
+  btn.classList.add('busy');
+  btn.innerHTML='Analysing<span class="ldots"><span class="ld"></span><span class="ld"></span><span class="ld"></span></span>';
+
+  const type  = document.getElementById('txtype').value;
+  const amount= parseFloat(document.getElementById('amount').value)||0;
+  const ob    = parseFloat(document.getElementById('ob').value)||0;
+  const oa    = parseFloat(document.getElementById('oa').value)||0;
+  const db    = parseFloat(document.getElementById('db').value)||0;
+
+  let p, fraud;
+  try {
+    const resp = await fetch('/predict', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        type,
+        amount,
+        oldBalanceOrig: ob,
+        newBalanceOrig: oa,
+        oldBalanceDest: db,
+      })
+    });
+    if(!resp.ok) throw new Error('Server error '+resp.status);
+    const result = await resp.json();
+    p     = result.probability;
+    fraud = result.fraud;
+  } catch(err){
+    btn.classList.remove('busy');
+    btn.textContent='Analyse transaction';
+    alert('Could not reach the model. Make sure the Flask server is running.');
+    return;
+  }
+
+  btn.classList.remove('busy');
+  btn.textContent='Analyse transaction';
+
+  const pct   = Math.round(p*100);
+  const drain = ob>0?Math.round((amount/ob)*100):0;
+  const origD = Math.abs(ob-oa-amount);
+  lastState   = {type,amount,ob,oa,db,pct,drain,origD,fraud};
+
+  document.getElementById('idle').style.display='none';
+  const res=document.getElementById('results');res.style.display='flex';
+
+  const v=document.getElementById('verd');
+  v.className='verd '+(fraud?'bad':'ok');
+  document.getElementById('vdot').className='vdot '+(fraud?'bad':'ok');
+  document.getElementById('vname').textContent=fraud?'Flag for review':'Looks clean';
+  document.getElementById('vsub').textContent=(fraud?'High fraud probability · ':'Low risk · ')+type;
+  const vp=document.getElementById('vpct');
+  vp.className='vpct '+(fraud?'bad':'ok');vp.textContent=pct+'%';
+  document.getElementById('ppct').textContent=pct+'%';
+
+  const bf=document.getElementById('bfill');
+  bf.style.width='0%';bf.style.background=fraud?'#ff6b8a':'#5ee7c8';
+  setTimeout(()=>{bf.style.width=pct+'%';},80);
+
+  document.getElementById('sgrid').innerHTML=[
+    {l:'How much was drained',v:drain+'% of balance sent',c:drain>90?'r':drain>50?'a':'g'},
+    {l:'Balance adds up',v:origD<1?'Exact to the cent (suspicious)':'Looks normal',c:origD<1?'r':'g'},
+    {l:'Recipient had money before',v:db===0?'No — throwaway account risk':'Yes — looks normal',c:db===0?'a':'g'},
+    {l:'Transaction type risk',v:(type==='TRANSFER'||type==='CASH_OUT')?'High risk type':'Low risk type',c:(type==='TRANSFER'||type==='CASH_OUT')?'a':'g'}
+  ].map(s=>`<div class="sig"><div class="sigl">${s.l}</div><div class="sigv ${s.c}">${s.v}</div></div>`).join('');
+
+  const typo=getTypo(type,drain,db,fraud);
+  const tc=document.getElementById('tcard');
+  if(typo){
+    tc.className='tcard show '+typo.k;
+    document.getElementById('tname').textContent=typo.name;
+    document.getElementById('tfatf').textContent=typo.fatf;
+    document.getElementById('tdesc').textContent=typo.desc;
+    document.getElementById('tbadge').textContent=typo.badge;
+    document.getElementById('tbadge').className='tbadge '+typo.k;
+    document.getElementById('tsigs').innerHTML=typo.sigs.map(s=>`<span class="tsig">${s}</span>`).join('');
+  } else {tc.className='tcard';}
+
+  document.getElementById('reasons').innerHTML=(fraud?[
+    {t:`The sender sent ${drain}% of their entire balance in a single transaction. Most people do not send everything they have at once.`,c:'r'},
+    {t:origD<1?'The amount sent matched the sender balance to the exact cent. That kind of precision is rare in normal transactions and common in automated fraud scripts.':'The numbers do not add up cleanly between what was sent and what was left behind.',c:origD<1?'r':'n'},
+    {t:db===0?'The recipient account had zero money in it before this transfer arrived. Legitimate accounts usually have some history. An empty account waiting to receive funds is a warning sign.':'The recipient account looked normal before this transaction.',c:db===0?'a':'g'},
+    {t:type+' is the only transaction type in this dataset where fraud consistently appears. The model has learned to treat it as high risk.',c:'a'}
+  ]:[
+    {t:`Only ${drain}% of the sender balance was used. There is no sign of the account being emptied.`,c:'g'},
+    {t:type+' transactions almost never appear as fraud across the full training dataset.',c:'g'},
+    {t:'The balance movement on both sides of this transaction looks normal and expected.',c:'g'}
+  ]).map(r=>`<div class="ri"><div class="rdot ${r.c}"></div><div class="rtxt">${r.t}</div></div>`).join('');
+
+  const sb=document.getElementById('sarbtn');
+  fraud?sb.classList.add('show'):sb.classList.remove('show');
+  resetInputs();
+  setTimeout(()=>startPostTour(),500);
+}
+
+/* SAR */
+function openSAR(){
+  const s=lastState;
+  const ref='SAR-'+Date.now().toString().slice(-8);
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('sarmeta').innerHTML=[
+    {l:'Reference',v:ref},{l:'Date',v:today},
+    {l:'Type',v:s.type},{l:'Amount',v:'$'+s.amount.toLocaleString()},
+    {l:'Fraud score',v:s.pct+'%'},{l:'Risk level',v:s.pct>85?'Critical':s.pct>65?'High':'Medium'}
+  ].map(m=>`<div class="sarmi"><div class="sarml">${m.l}</div><div class="sarmv">${m.v}</div></div>`).join('');
+  document.getElementById('sarnar').textContent=`On ${today}, a ${s.type} transaction of $${s.amount.toLocaleString()} was flagged by the automated monitoring system with a fraud probability of ${s.pct}%. The sender held $${s.ob.toLocaleString()} before the transaction and $${s.oa.toLocaleString()} after, meaning ${s.drain}% of their balance was sent in a single move. The recipient held $${s.db.toLocaleString()} before receiving the funds. The transaction pattern is consistent with ${s.drain>90&&s.db===0?'an account takeover where a fraudster accessed the account without permission and emptied it, sending funds to a throwaway recipient account with no prior balance':s.type==='CASH_OUT'?'illicit cash conversion, where funds are rapidly withdrawn as cash to make them harder to trace':'suspicious fund movement that requires further investigation'}. This case has been escalated for analyst review.`;
+  document.getElementById('sarflags').innerHTML=[
+    s.drain>90?`${s.drain}% of the sender balance was sent in a single transaction. This level of account drainage in one move is a strong indicator of account takeover.`:null,
+    s.origD<1?'The transaction amount matched the sender pre-transaction balance to the exact cent. Normal transactions rarely align this precisely. This is a pattern commonly seen in automated fraud.':null,
+    s.db===0?'The recipient account held zero funds before this transfer. This is consistent with a mule account, an account set up or taken over by criminals specifically to receive and quickly move stolen funds.':null,
+    `${s.type} is a transaction type that consistently appears in fraud cases within this dataset and is treated as high risk by the model.`,
+    `The model returned a fraud confidence score of ${s.pct}%, which exceeds the threshold required to escalate for human review.`
+  ].filter(Boolean).map(f=>`<div class="sarflag">${f}</div>`).join('');
+  document.getElementById('sar-modal').classList.add('show');
+}
+function closeSAR(){document.getElementById('sar-modal').classList.remove('show');}
+document.getElementById('sar-modal').addEventListener('click',function(e){if(e.target===this)closeSAR();});
+
+/* COACH -- positions card AWAY from inputs, always on right panel or above */
+const PRE=[
+  {tag:'Step 1 of 5',title:'Welcome',body:"This is a live fraud detection model. It reads transaction data and tells you whether something looks suspicious. Walk through in about a minute.",target:'topbar',pos:'bc',total:5},
+  {tag:'Step 2 of 5',title:'The live feed',body:"Transactions are being screened in real time up there. Red dots are flagged. Green ones are clean. The numbers are their fraud scores.",target:'feed-strip',pos:'bc',total:5},
+  {tag:'Step 3 of 5',title:'Transaction type',body:"TRANSFER and CASH_OUT are the only types where fraud ever shows up. PAYMENT and DEBIT come back clean every time. The model figured that out on its own.",target:'f-type',pos:'rp',total:5},
+  {tag:'Step 4 of 5',title:'The balance fields',body:"The model does not just look at the amount. It looks at what was left behind. A sender who sends everything they have and ends up at zero is a strong fraud signal.",target:'f-ob',pos:'rp',total:5},
+  {tag:'Step 5 of 5',title:'Try a scenario',body:"Load one of the pre-built transactions below the form, or enter your own values. Hit Analyse and see what the model finds.",target:'rbtn',pos:'rp',total:5}
+];
+const POST=[
+  {tag:'Insight 1 of 4',title:'The fraud score',body:"The model gives every transaction a probability between 0 and 1. Anything above 0.5 gets flagged. This one scored 0.998 on the accuracy test, which means it almost never gets it wrong.",target:'pcard',pos:'lp',total:4},
+  {tag:'Insight 2 of 4',title:'What type of fraud is it',body:"Flagging a transaction is just the start. The model also identifies what kind of fraud it looks like: an account takeover (someone breaking in and emptying it), layering (shuffling stolen money through throwaway accounts), or cash conversion (quickly turning funds to cash). This matters because each type gets investigated differently.",target:'tcard',pos:'lp',total:4},
+  {tag:'Insight 3 of 4',title:'Why the model flagged it',body:"This section breaks down exactly which signals triggered the flag. Each one maps to a real fraud behaviour pattern.",target:'rcard',pos:'lp',total:4},
+  {tag:'Insight 4 of 4',title:'The SAR draft',body:"A Suspicious Activity Report is what gets filed with regulators after a flag. Click the button below to see a pre-filled draft based on this transaction.",target:'sarbtn',pos:'lp',total:4}
+];
+
+let cStep=0,cPost=false;
+
+function buildDots(total,active){
+  const c=document.getElementById('cdots');c.innerHTML='';
+  for(let i=0;i<total;i++){const d=document.createElement('div');d.className='cdot'+(i===active?' on':'');c.appendChild(d);}
+}
+
+function posCoach(tid,pos){
+  const card=document.getElementById('ccard'),ring=document.getElementById('cring');
+  const tel=document.getElementById(tid);
+  if(!tel){card.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%);width:218px';return;}
+  const r=tel.getBoundingClientRect();
+  const vw=window.innerWidth,vh=window.innerHeight;
+  const bw=Math.min(218,vw*0.56);
+  const bh=180; // approx card height
+
+  ring.style.cssText=`position:fixed;top:${r.top-4}px;left:${r.left-4}px;width:${r.width+8}px;height:${r.height+8}px;`;
+  ring.classList.add('on');
+
+  let top,left;
+
+  if(pos==='bc'){
+    // below center of target
+    top=r.bottom+10;
+    left=r.left+r.width/2-bw/2;
+  } else if(pos==='rp'){
+    // place on RIGHT PANEL side, vertically aligned with target
+    // find right panel
+    const rp=document.getElementById('panel-r');
+    if(rp){
+      const rpr=rp.getBoundingClientRect();
+      left=rpr.left+12;
+      top=r.top;
+    } else {
+      left=r.right+14;top=r.top;
+    }
+  } else if(pos==='lp'){
+    // place on LEFT PANEL side
+    const lp=document.getElementById('panel-l');
+    if(lp){
+      const lpr=lp.getBoundingClientRect();
+      left=lpr.left+12;
+      top=r.top;
+    } else {
+      left=r.left-bw-14;top=r.top;
+    }
+  } else {
+    left=r.right+14;top=r.top;
+  }
+
+  // clamp within viewport
+  left=Math.max(6,Math.min(left,vw-bw-6));
+  top=Math.max(60,Math.min(top,vh-bh-10));
+
+  card.style.cssText=`position:fixed;top:${top}px;left:${left}px;transform:none;width:${bw}px;`;
+}
+
+function showStep(idx,post){
+  const steps=post?POST:PRE;
+  if(idx>=steps.length){endTour();return;}
+  const s=steps[idx];
+  document.getElementById('ctag').textContent=s.tag;
+  document.getElementById('ctitle').textContent=s.title;
+  document.getElementById('cbody').textContent=s.body;
+  document.getElementById('cnext').textContent=idx===steps.length-1?(post?'Done':'Got it'):'Next';
+  buildDots(s.total,idx);
+  const card=document.getElementById('ccard');
+  card.classList.remove('on');document.getElementById('cring').classList.remove('on');
+  setTimeout(()=>{posCoach(s.target,s.pos);card.classList.add('on');},70);
+}
+
+function nextStep(){cStep++;showStep(cStep,cPost);}
+function endTour(){document.getElementById('ccard').classList.remove('on');document.getElementById('cring').classList.remove('on');}
+function startPreTour(){cPost=false;cStep=0;showStep(0,false);}
+function startPostTour(){cPost=true;cStep=0;showStep(0,true);}
+</script>
+</body>
+</html>

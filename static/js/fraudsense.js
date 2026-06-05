@@ -278,8 +278,8 @@ document.getElementById('sar-modal').addEventListener('click',function(e){if(e.t
 
 /* COACH -- positions card AWAY from inputs, always on right panel or above */
 const PRE=[
-  {tag:'Step 1 of 5',title:'Welcome',body:"This is a live fraud detection model. It reads transaction data and tells you whether something looks suspicious. Walk through in about a minute.",target:'topbar',pos:'bc',total:5},
-  {tag:'Step 2 of 5',title:'The live feed',body:"Transactions are being screened in real time up there. Red dots are flagged. Green ones are clean. The numbers are their fraud scores.",target:'feed-strip',pos:'bc',total:5},
+  {tag:'Step 1 of 5',title:'What it is',body:"This is a live fraud detection model. It reads transaction data and tells you whether something looks suspicious. Walk through in about a minute.",target:'topbar',pos:'bc',total:5},
+  {tag:'Step 2 of 5',title:'The live feed',body:"Transactions are being screened in real time based on trained synthetic mobile money data. Red dots are flagged. Green ones are clean. The numbers are their fraud scores.",target:'feed-strip',pos:'bc',total:5},
   {tag:'Step 3 of 5',title:'Transaction type',body:"TRANSFER and CASH_OUT are the only types where fraud ever shows up. PAYMENT and DEBIT come back clean every time. The model figured that out on its own.",target:'f-type',pos:'rp',total:5},
   {tag:'Step 4 of 5',title:'The balance fields',body:"The model does not just look at the amount. It looks at what was left behind. A sender who sends everything they have and ends up at zero is a strong fraud signal.",target:'f-ob',pos:'rp',total:5},
   {tag:'Step 5 of 5',title:'Try a scenario',body:"Load one of the pre-built transactions below the form, or enter your own values. Hit Analyse and see what the model finds.",target:'rbtn',pos:'rp',total:5}
